@@ -1,0 +1,17 @@
+# Raw data
+data/
+*.mtx
+*.mtx.gz
+*.tsv.gz
+
+# Seurat objects
+*.rds
+
+# R session files
+.Rhistory
+.RData
+.Rproj.user/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
