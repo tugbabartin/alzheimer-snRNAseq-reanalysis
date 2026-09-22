@@ -222,7 +222,7 @@ final_cluster_names <- c(
 
   `15` = "OPC / oligodendrocyte precursor",
 
-  `16` = "Astrocyte",
+  `16` = "Excitatory neuron",
 
   `17` = "OPC / oligodendrocyte precursor (VCAN+)",
 
