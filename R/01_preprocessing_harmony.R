@@ -23,6 +23,8 @@ library(clusterProfiler)
 library(org.Hs.eg.db)
 library(KEGGREST)
 library(ggplot2)
+library(scDblFinder)
+library(SingleCellExperiment)
 
 
 # ------------------------------------------------------------
@@ -277,8 +279,64 @@ seurat_A4 <- RenameCells(
 
 
 # ------------------------------------------------------------
-# 10. Merge samples
+# 10. Doublet detection and removal
 # ------------------------------------------------------------
+
+# Doublets are detected separately for each biological sample
+# before merging the four datasets.
+
+seurat_list <- list(
+  A1 = seurat_A1,
+  A2 = seurat_A2,
+  A3 = seurat_A3,
+  A4 = seurat_A4
+)
+
+seurat_list_clean <- list()
+
+for (sample_name in names(seurat_list)) {
+
+  obj <- seurat_list[[sample_name]]
+
+  message(
+    "Running doublet detection for sample: ",
+    sample_name
+  )
+
+  # Preprocessing required for doublet detection
+  obj <- NormalizeData(obj)
+  obj <- FindVariableFeatures(obj)
+  obj <- ScaleData(obj)
+  obj <- RunPCA(obj)
+
+  # Convert to SingleCellExperiment and run scDblFinder
+  sce_obj <- as.SingleCellExperiment(obj)
+
+  sce_obj <- scDblFinder(sce_obj)
+
+  # Add doublet information back to the Seurat object
+  obj$scDblFinder.class <- sce_obj$scDblFinder.class
+  obj$scDblFinder.score <- sce_obj$scDblFinder.score
+
+  print(
+    table(obj$scDblFinder.class)
+  )
+
+  # Retain singlets only
+  obj_clean <- subset(
+    obj,
+    subset = scDblFinder.class == "singlet"
+  )
+
+  seurat_list_clean[[sample_name]] <- obj_clean
+}
+
+
+# Replace original objects with doublet-filtered objects
+seurat_A1 <- seurat_list_clean[["A1"]]
+seurat_A2 <- seurat_list_clean[["A2"]]
+seurat_A3 <- seurat_list_clean[["A3"]]
+seurat_A4 <- seurat_list_clean[["A4"]]
 
 combined <- merge(
   seurat_A1,
